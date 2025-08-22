@@ -1,0 +1,28 @@
+why does this message appear in the console when we first type 'testbot' and press connect? 
+' GET http://localhost:3000/favicon.ico 404 (Not Found)'
+
+
+That 404 isn’t related to WebRTC or your code—it’s just the browser looking for a favicon
+(the small icon shown in the tab bar). When you loaded http://localhost:3000, the browser 
+automatically asked the server for /favicon.ico. Because we didn’t place a favicon.ico file in 
+public/, Express can’t find it and responds 404. It’s harmless and you can safely ignore it.
+
+If you want to remove the warning:
+
+Add a favicon
+
+	Create a 32×32 px image (PNG or ICO).
+
+	Save it in public/ as favicon.ico.
+
+	Or reference it in <head>:
+------------------------------------------------------------------------------------------
+
+<link rel="icon" href="favicon.png">
+
+------------------------------------------------------------------------------------------
+
+Suppress the log (optional)
+	Leave the file missing; the 404 won’t affect anything else.
+
+So the message simply means “the browser asked for a tab icon, but none was provided.”

@@ -1,0 +1,90 @@
+media unit prototype 1.0:
+	- works only in localhost. open 2 tabs in the browser.
+	  first one is the operator and the other is the robot.
+	- in the operator tab, enter robot id. it can be any text in this version.
+	- say, you typed 'TESTBOT'. press connect.
+	- in the robot tab, paste the code snippet in the dev console.
+	- change the robot id to the same thing you wrote in the first tab.
+	- run the code.
+	- the operator tab under the robot feed the audio and video should be
+	  visible.
+	- this version does not use twilio, gstreamer(no pi conencted), 
+	  glitch
+
+media unit prototype 1.1:
+	- works on two computers in different networks.
+	- one computer acts as the operator and the other simulates the 
+	  robot.
+	- in this version glitch has to be used. can push the project files 
+	  from github to glitch.
+	- there is now a new separate html file next to index.html called 
+	  robot.html 
+	- to open the as the robot in the computer that acts as the robot,
+	  open robot.html
+	- both operator and robot must use the same robot id in the prompt.
+	- this version does not use twilio, gstreamer.
+
+media unit prototype 1.2:
+	- this time the other computer is a rpi 4 running a python code that 
+	  speaks WebRTC. 
+	- can be written in a way that the code runs in startup(this is 
+	  optional).
+	- need to prepare rpi for the task. need to install gstreamer 1.22 with
+	  'webrtcbin' and add python socket.io client.
+	- the python code is named as 'robot_client.py'
+	- this version does not use twilio.
+
+media unit prototype 1.3:
+	- this time we have added twilio to the project. the rest stays the same.
+	- but, we do not use twilio TURN server. use only its STUN server.
+
+media unit prototype 1.4:
+	- try to add nextcloud TURN server.
+
+-----------------------------------------------------------------------------------
+
+media unit prototype 2.0:
+	- the media unit is now working as a separate unit. it is now time to 
+	  add the control command ability to the project.
+	- glitch server does not allow a web socket to stay open for a long time.
+	- so, the idea is to use the webrtc datachannel using twilio.
+	- you also need to add gamepad API to accept the commands.
+	- the main task of this version is integrating the Gamepad API.
+	- need to make sure all the commands are recieved by the rpi 5.
+	- for this you can deploy a special code(not a robot controlling code)
+	  that types to a console when a certain button is pressed on the console.
+	- there is no need for a separate button to connect commands. because we use 
+	  webrtc for robot commands as well -> clarify !
+
+media unit prototype 2.1:
+	- now the commands are working.
+	- need to improve the web UI. 
+	- in the web UI there is a virtual console. 
+	- this virtual console is connected with the code in the rpi 5 the moment
+	  the connection is made. 
+	- even if the hardware console is absent,  when you press a button in the 
+	  virtual console, that command must be received by the rpi 5.
+	- when the hardware console is connected, it connects with the virual console.
+	- i guess it maps the buttons between eachother.
+
+media unit prototype 2.2:
+	- the media unit is now integrated with controls now.
+	- add sign in option.!!! need to think and need more info !!!
+	- a user name is given/choosen by the customer when the robot is bought.
+	- things the customer gets during purchase:
+		- a robot ID - unique for the robot
+		- user name
+ 	- for now need to find a way to bind these things together- user name, 
+	  email, password, robot id 
+
+media unit prototype 2.3:
+	- all the security functions are done with the previous version.
+	- this version is for upgrading the UI.
+	- beautify the UI.
+	- robot feed can be put on full screen mode. on the right lower 
+	  coner operator feed is visible. 
+	- 
+
+- adding more than one camera.
+- controling the cameras - turn the camera of the robot using the UI.
+- 

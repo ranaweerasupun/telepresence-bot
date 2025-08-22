@@ -1,0 +1,129 @@
+Below is the fastest path to test Prototype 1 with two real computers on 
+two different networks:
+
+Role		Computer		Browser page you’ll open
+Operator	Your Mac		https://YOUR-PROJECT.glitch.me/ (the original UI)
+Robot		Your Windows PC		https://YOUR-PROJECT.glitch.me/robot.html (a tiny page we add)
+
+The only code you need to add is that robot.html file (2 minutes). Everything 
+else you already built stays the same.
+
+
+Step 0 Deploy your server to Glitch
+
+	Push the folder (without node_modules) to GitHub or zip-upload to Glitch.
+
+	Glitch installs and starts; note the live URL, e.g.
+		https://telepresence-proto1.glitch.me
+
+You can still dev-test locally, but both computers must be able to reach the same 
+signalling host, so Glitch is easier.
+
+
+Step 1 Add public/robot.html
+
+Create public/robot.html next to index.html:
+
+--------------------------------------------------------------------------------------
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Robot Peer (demo)</title>
+</head>
+<body>
+  <h2>Robot Peer</h2>
+  <video id="local" autoplay muted playsinline width="320"></video>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // 1️⃣  Ask user for Robot ID once page loads
+    const robotId = prompt("Enter Robot ID to host:", "TESTBOT")?.trim();
+    if (!robotId) location.reload();
+
+    // 2️⃣  Connect to signalling
+    const sock = io({ transports:["websocket"] });    // guarantee WS (Glitch likes that)
+
+    // 3️⃣  WebRTC setup
+    const pc = new RTCPeerConnection({
+      iceServers:[{urls:"stun:stun.l.google.com:19302"}]
+    });
+    pc.onicecandidate = e => e.candidate && sock.emit('candidate', e.candidate);
+
+    // 4️⃣  Get cam+mic
+    navigator.mediaDevices.getUserMedia({video:true, audio:true})
+      .then(stream=>{
+        document.getElementById("local").srcObject = stream;
+        stream.getTracks().forEach(t=> pc.addTrack(t, stream));
+      });
+
+    // 5️⃣  Signalling handlers
+    sock.on('offer', async off=>{
+      await pc.setRemoteDescription(off);
+      await pc.setLocalDescription(await pc.createAnswer());
+      sock.emit('answer', pc.localDescription);
+    });
+    sock.on('candidate', c=> pc.addIceCandidate(c));
+
+    // 6️⃣  Join room
+    sock.emit('join', { robotId, role:'robot' });
+    console.log("Robot ready in room", robotId);
+  </script>
+</body>
+</html>
+
+--------------------------------------------------------------------------------------
+Why? This page contains the same “stub” logic you pasted in DevTools, but now it’s a 
+real file—so no duplicate operator code runs and no “pc already declared” errors.
+
+Step 2 Reconnect both peers
+	A. Operator (Mac)
+
+		Open https://telepresence-proto1.glitch.me.
+
+		Type exactly the same Robot ID (e.g. TESTBOT).
+
+		Click Connect and allow camera/mic.
+
+	B. Robot (Windows)
+
+		Open https://telepresence-proto1.glitch.me/robot.html.
+
+		Enter the identical Robot ID in the prompt.
+
+		Allow camera/mic.
+
+Step 3 Watch it work
+
+	The Mac tab will show Local Preview (your mac-cam) and, after a second or two, Robot 
+	Feed (Windows webcam).
+
+	Audio will flow both ways.
+
+	Chrome dev console on each side will log ICE candidates and “Remote track added”.
+
+Troubleshooting checklist
+Problem						Fix
+🔒 Browser blocks camera/mic			Ensure page is HTTPS (Glitch already is). Accept the permission prompt.
+🔄 Stuck on “connecting”				Open DevTools → Network → WebSocket. If WS closes, check Glitch logs (needs active User-Agent only for non-browser code).
+🔇 Video shows but no audio (or vice-versa)	Confirm both getUserMedia calls include audio:true.
+🌐 ICE fails across some networks		STUN alone can fail ~20 % of the time. Add a TURN server to iceServers later if needed.
+
+
+How the connection happens (recap)
+
+	Both peers join the same Socket.io room (robotId).
+
+	Server detects robot + operator ⇒ emits ready to operator.
+
+	Operator creates SDP offer → sends via WS.
+
+	Robot sets offer, creates answer → sends back.
+
+	Both sides exchange ICE candidates (public + local addresses).
+
+	First candidate pair that can talk does a DTLS handshake → encrypted SRTP media flows directly between the two computers—no video passes through Glitch.
+
+	The console dump you saw earlier was just Chrome printing the Socket object; the TypeError was because operator code ran in a tab we pretended was a robot. Moving robot logic into robot.html removes that conflict.
+
+	You now have end-to-end, cross-network WebRTC with custom signalling. The next step (when you’re ready) is to replace robot.html with the real Python + GStreamer client on the Raspberry Pi.

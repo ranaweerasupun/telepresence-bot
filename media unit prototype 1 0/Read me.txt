@@ -1,0 +1,70 @@
+How to run locally
+-------------------------------------------------------------------------------
+
+git clone <repo>
+cd telepresence-proto1
+npm install
+npm run dev        # uses nodemon for auto-reload
+
+-------------------------------------------------------------------------------
+
+
+Open http://localhost:3000
+in two browser tabs to simulate robot & operator (until real Pi code is ready). 
+In the “robot” tab paste the same Robot ID, open DevTools and paste:
+
+// Quick robot stub to reply with ICE / answer for demo only:
+socket.emit('join', {robotId:'MYBOT', role:'robot'});
+let pc; socket.on('offer', async off=>{
+    pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    pc.onicecandidate=e=>e.candidate&&socket.emit('candidate',e.candidate);
+    off=new RTCSessionDescription(off);
+    await pc.setRemoteDescription(off);
+    localStream = await navigator.mediaDevices.getUserMedia({ video:true,audio:true });
+    localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+    const ans=await pc.createAnswer(); await pc.setLocalDescription(ans);
+    socket.emit('answer', ans);
+});
+socket.on('candidate', c=>pc.addIceCandidate(c));
+
+
+You’ll see each other’s video feeds—proving signalling + WebRTC works.
+
+
+--------------------------------------------------------------------------------------
+
+if the code above gives errors like 'pc already declared' paste this code.
+
+The error just means you (or the page) already created a pc variable in that console session,
+so declaring it again with let pc; is a duplicate. Two easy ways to clear it:
+
+Quick fix			What to do
+Reload the tab			Press ⌘ R (or click ↻). The console context resets, 
+				so the variable is gone. Then paste the stub again.
+Remove the duplicate 'let'	Delete the first line (let pc;) from the snippet before 
+				hitting Enter, or change it to 'pc = undefined';.
+
+
+One-line “idempotent” version (safe to paste multiple times)
+
+----------------------------------------------------------------------------------------
+
+socket.emit('join',{robotId:'TESTBOT',role:'robot'});
+window.pc ||= null;           // only declare if not already
+socket.on('offer', async off=>{
+  pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+  pc.onicecandidate = e => e.candidate && socket.emit('candidate', e.candidate);
+  await pc.setRemoteDescription(new RTCSessionDescription(off));
+  const local = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  local.getTracks().forEach(t => pc.addTrack(t, local));
+  await pc.setLocalDescription(await pc.createAnswer());
+  socket.emit('answer', pc.localDescription);
+});
+socket.on('candidate', c => pc.addIceCandidate(c));
+
+-----------------------------------------------------------------------------------------------------------
+Now you can paste it multiple times without the “already declared” error. Once it runs 
+(and the first tab has already clicked Connect with the same Robot ID), you should see the robot video 
+feed appear in the operator tab.
+
+

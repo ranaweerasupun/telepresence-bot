@@ -1,0 +1,157 @@
+Step-by-step: run and test Prototype 1 entirely on your Mac with VS Code
+
+Prereqs
+• Node ≥ 18 already installed
+• VS Code installed
+• A webcam+mic attached or built-in
+
+
+1 Create and open the project folder
+
+Launch VS Code.
+
+Press ⌘⇧P → “>New Window” (optional).
+
+In the menu: File ▸ Open Folder… → choose or create a folder, 
+e.g. ~/telepresence-proto1 → Open.
+VS Code now shows an empty Explorer.
+
+
+
+2 Add the files
+
+In the Explorer sidebar click New File and create these (exact names / paths):
+
+-------------------------------------------------------
+
+package.json
+server.js
+.env            ← optional, but add with PORT=3000
+/public
+    index.html
+    style.css
+    client.js
+-------------------------------------------------------
+
+Copy-paste the code I supplied into each file and save (⌘S).
+
+3 Install dependencies
+
+Open an integrated terminal
+
+	Terminal ▸ New Terminal (or ⌃`).
+	The prompt should show the new folder path.
+
+Run:
+--------------------------------------------------------
+npm install
+--------------------------------------------------------
+
+This reads package.json and pulls express, socket.io, dotenv, 
+nodemon into node_modules/.
+
+
+4 Start the server
+Fast dev mode (auto-reload)
+-------------------------------------------------------
+npm run dev
+-------------------------------------------------------
+
+	Nodemon starts 'server.js' on port 3000 and restarts on every file save.
+
+	You should see:
+		'Signalling server listening on 3000'
+
+One-off run
+-------------------------------------------------------
+npm start
+-------------------------------------------------------
+
+5 Open the operator UI
+
+In Chrome / Edge / Firefox visit: http://localhost:3000
+
+Grant camera/mic permission when prompted (needed for the local preview).
+
+Type a Robot ID (any string, e.g. TESTBOT) and click Connect.
+
+	Your own webcam feed appears in Local Preview.
+
+At this moment the UI is waiting for a robot peer to join the same ID
+and send video.
+
+
+
+6 Simulate the robot in a second tab (quick test)
+
+Open a new browser tab at http://localhost:3000
+.
+
+Open DevTools (⌥⌘I) → Console.
+
+Paste the robot-stub snippet I provided earlier (update Robot ID to exactly 
+the same string) and press Enter.
+
+The stub joins as role robot, answers the SDP, and streams its own camera.
+
+You should now see the Remote Feed video populate in the first tab.
+
+
+
+7 What to look for
+
+	Terminal logs (server):
+
+	[socket] connected …,
+
+	[room TESTBOT] operator joined,
+
+	[room TESTBOT] robot joined,
+
+	Both peers present…,
+
+	Forwarded offer…/answer…
+
+Browser console (operator):
+
+	“Starting peer connection…”,
+
+	“Local SDP set…”,
+
+	“Remote track added…”.
+
+Two live videos on the page.
+
+Mute / Stop Cam buttons toggle your local preview and stop sending tracks 
+(robot feed keeps playing).
+
+
+8 Troubleshooting
+Symptom						Fix
+Camera permission prompt doesn’t appear		Make sure page is served from http://localhost or https:// (browsers block camera on arbitrary file URLs).
+“Failed to set remote description”		Check both tabs use identical Robot ID; refresh and retry.
+Only Local Preview shows			Confirm robot stub pasted correctly and DevTools shows no errors.
+Port 3000 in use				Edit .env to another port (e.g. 4000); update URL in second tab and in robot stub’s WebSocket string.
+
+
+9 Ready to push to Glitch
+
+	Select all project files (except node_modules) → Right-click ▸ Reveal in Finder.
+
+	Zip or push to GitHub.
+
+	In Glitch: New Project ▸ Import from GitHub (or drag-upload).
+
+	Glitch installs deps and runs npm start.
+
+	Your live URL is something like https://telepresence-proto1.glitch.me — open 
+	it in a browser; run the robot stub with:
+
+---------------------------------------------------------------------------------------
+const socket = io("wss://telepresence-proto1.glitch.me", {
+  transports:["websocket"],
+  extraHeaders:{ "User-Agent": "RobotClient/1.0" }
+});
+--------------------------------------------------------------------------------------
+
+(Glitch requires the User-Agent header from non-browser clients to avoid 502 proxy errors.)
